@@ -119,8 +119,8 @@ export function AuthProvider({ children }) {
     { id: "d2", name: "Apartments", createdAt: "Origin" },
     { id: "d3", name: "Houseboats", createdAt: "Origin" },
   ];
-
-  const value = { currentUser, login, logout, signup, defaultCategories };
+  
+  const value = { currentUser, login, logout, signup, defaultCategories};
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
