@@ -62,7 +62,7 @@
 // }
 
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, JSX } from "react";
 import { authAdmin } from "../firebase";
 import {
   createUserWithEmailAndPassword,
