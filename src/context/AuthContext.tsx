@@ -1,85 +1,93 @@
+
 // import { createContext, useContext, useEffect, useState } from "react";
-// import {  authAdmin } from "../firebase";
-// import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-// import { useNavigate } from "react-router-dom";
+// import { authAdmin } from "../firebase";
+// import {
+//   createUserWithEmailAndPassword,
+//   onAuthStateChanged,
+//   signInWithEmailAndPassword,
+//   signOut,
+// } from "firebase/auth";
 
 // const AuthContext = createContext();
 
 // export function AuthProvider({ children }) {
-//   // const navigate= useNavigate()
 //   const [currentUser, setCurrentUser] = useState(null);
-//   // const [loading, setLoading] = useState(true);
 
-//   // useEffect(() => {
-//   //   const unsubscribe = onAuthStateChanged(authAdmin, (user) => {
-//   //     setCurrentUser(user);
-//   //     setLoading(false);
-//   //   });
-//   //   return unsubscribe;
-//   // }, []);
+//   // Real-time auth state listener
+//   useEffect(() => {
+//     const unsubscribe = onAuthStateChanged(authAdmin, (user) => {
+//       setCurrentUser(user);
+//     });
+//     return unsubscribe;
+//   }, []);
 
 //   const login = (email, password) => {
-//     // return signInWithEmailAndPassword(authAdmin, email, password);
-//     const val=signInWithEmailAndPassword(authAdmin,email,password).then(data=>{
-//       setCurrentUser(data.user)
-//       console.log(data.user);
-//       // navigate('/')
-//     }
-//     )
-    
-    
+//     return signInWithEmailAndPassword(authAdmin, email, password)
+//     // .then(
+//     //   (data) => {
+//     //     setCurrentUser(data.user);
+//     //   }
+//     // );
+//   };
+
+//   const signup = (email, password) => {
+//     return createUserWithEmailAndPassword(authAdmin, email, password)
+//     // .then(
+//     //   (data) => {
+//     //     setCurrentUser(data.user);
+//     //   }
+//     // );
 //   };
 
 //   const logout = () => {
-//     // return signOut(authAdmin);
-//     signOut(authAdmin)
-//     setCurrentUser(null)
-//     // navigate('/login')
-    
-//   };
-//   const signup = (email, password) => {
-//     // return createUserWithEmailAndPassword(authAdmin, email, password);
-//     createUserWithEmailAndPassword(authAdmin, email, password).then(data=>{
-//       setCurrentUser(data.user)
-//       // navigate('/')
-
-//     })
+//     return signOut(authAdmin)
+//     // .then(() => {
+//     //   setCurrentUser(null);
+//     // });
 //   };
 
-//   const defaultCategories=[
-//     {id:'d1',name:'Villas',createdAt:"Origin"},
-//     {id:'d2',name:'Apartments',createdAt:"Origin"},
-//     {id:'d3',name:'Houseboats',createdAt:"Origin"},
+//   const defaultCategories = [
+//     { id: "d1", name: "Villas", createdAt: "Origin" },
+//     { id: "d2", name: "Apartments", createdAt: "Origin" },
+//     { id: "d3", name: "Houseboats", createdAt: "Origin" },
+//   ];
   
-  
-//   ]
+//   const value = { currentUser, login, logout, signup, defaultCategories};
 
-//   const value = { currentUser, login, logout, defaultCategories, signup };
-
-//   return (
-//     <AuthContext.Provider value={value}>
-//       {children}
-//     </AuthContext.Provider>
-//   );
+//   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 // }
 
 // export function useAuth() {
 //   return useContext(AuthContext);
 // }
 
-import { createContext, useContext, useEffect, useState } from "react";
+
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { authAdmin } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  User,
 } from "firebase/auth";
 
-const AuthContext = createContext();
+interface AuthContextType {
+  currentUser: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
+  defaultCategories: { id: string; name: string; createdAt: string }[];
+}
 
-export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Real-time auth state listener
   useEffect(() => {
@@ -89,29 +97,25 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  const login = (email, password) => {
+  const login = (email: string, password: string): Promise<void> => {
     return signInWithEmailAndPassword(authAdmin, email, password)
-    // .then(
-    //   (data) => {
-    //     setCurrentUser(data.user);
-    //   }
-    // );
+      .then((data) => {
+        setCurrentUser(data.user);
+      });
   };
 
-  const signup = (email, password) => {
+  const signup = (email: string, password: string): Promise<void> => {
     return createUserWithEmailAndPassword(authAdmin, email, password)
-    // .then(
-    //   (data) => {
-    //     setCurrentUser(data.user);
-    //   }
-    // );
+      .then((data) => {
+        setCurrentUser(data.user);
+      });
   };
 
-  const logout = () => {
+  const logout = (): Promise<void> => {
     return signOut(authAdmin)
-    // .then(() => {
-    //   setCurrentUser(null);
-    // });
+      .then(() => {
+        setCurrentUser(null);
+      });
   };
 
   const defaultCategories = [
@@ -119,12 +123,16 @@ export function AuthProvider({ children }) {
     { id: "d2", name: "Apartments", createdAt: "Origin" },
     { id: "d3", name: "Houseboats", createdAt: "Origin" },
   ];
-  
-  const value = { currentUser, login, logout, signup, defaultCategories};
+
+  const value = { currentUser, login, logout, signup, defaultCategories };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }
