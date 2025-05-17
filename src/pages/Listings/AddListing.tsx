@@ -4,6 +4,7 @@ import { db } from "../../firebase";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import supabase from "../../supabase";
 
 export default function AddListing() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export default function AddListing() {
     pinCode: "",
     category: "",
     description: "",
+    imageUrl: "",
     adminUID: currentUser.uid,
     available: true,
   });
@@ -65,6 +67,30 @@ export default function AddListing() {
       setUploading(false);
     }
   };
+
+    const handleUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  // setUploading(true);
+
+  const filePath = `listings/${Date.now()}_${file.name.replace(/\s+/g, '')}`;
+  const { data, error } = await supabase.storage
+    .from('travel') // 👈 your bucket name
+    .upload(filePath, file);
+
+  if (error) {
+    toast.error("Image upload failed: " + error.message);
+  } else {
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('travel')
+      .getPublicUrl(filePath);
+    setFormData({ ...formData, imageUrl: publicUrlData.publicUrl });
+    // toast.success("Image uploaded successfully!");
+  }
+
+  // setUploading(false);
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-emerald-950 p-6">
@@ -151,7 +177,17 @@ export default function AddListing() {
             required
           />
         </div>
-
+              <div>
+        <label className="block mb-1 font-semibold text-gray-300">Upload Image</label>
+  <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} />
+      {/* {uploading && <p>Uploading...</p>} */}
+      {/* {imageUrl && (
+        <div>
+          <p></p>
+          <img src={imageUrl} alt="Uploaded" style={{ width: '300px', marginTop: '10px' }} />
+        </div>
+      )} */}
+    </div>
         <div className="flex items-center space-x-3">
           <input
             type="checkbox"

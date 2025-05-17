@@ -4,12 +4,15 @@ import { db } from '../../firebase';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext';
 
 export default function CategoriesList() {
   const { defaultCategories } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  
+  console.log(defaultCategories);
+  
   useEffect(() => {
     const fetchCategories = async () => {
       try {

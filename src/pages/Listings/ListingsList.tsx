@@ -19,6 +19,8 @@ export default function ListingsList() {
           ...doc.data(),
         }));
         setListings(listingsData);
+        console.log("adminlisting",listingsData);
+        
       } catch (error) {
         toast.error("Error fetching listings: " + error.message);
       } finally {
@@ -57,11 +59,11 @@ export default function ListingsList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {listings.map((listing) => (
           <div key={listing.id} className="bg-gray-800 p-6 rounded-lg shadow-xl shadow-emerald-800 text-white">
-            {/* <img
-              src={listing.images[0]}
+            <img
+              src={listing.imageUrl}
               alt={listing.name}
               className="w-full h-40 object-cover rounded mb-4"
-            /> */}
+            />
             <h2 className="font-bold text-emerald-300">{listing.name}</h2>
             <p className="text-gray-400">${listing.price}/night</p>
             <div className="flex justify-between mt-4">
