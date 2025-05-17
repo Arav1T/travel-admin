@@ -121,8 +121,6 @@ export default function CategoriesList(): JSX.Element {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  console.log(defaultCategories);
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -155,6 +153,13 @@ export default function CategoriesList(): JSX.Element {
   };
 
   if (loading) return <div className="text-center py-8 text-gray-300">Loading...</div>;
+
+  const formatDate = (createdAt: Category['createdAt']) => {
+    if (typeof createdAt === 'string') {
+      return createdAt === 'Origin' ? 'Default' : createdAt;
+    }
+    return new Date(createdAt.seconds * 1000).toLocaleDateString();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-emerald-950 p-6">
@@ -190,9 +195,7 @@ export default function CategoriesList(): JSX.Element {
                   {category.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-gray-400 text-sm">
-                  {category.createdAt === 'Origin'
-                    ? 'Default'
-                    : new Date(category.createdAt?.seconds * 1000).toLocaleDateString()}
+                  {formatDate(category.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {category.createdAt !== 'Origin' && (

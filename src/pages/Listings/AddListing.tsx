@@ -213,14 +213,28 @@
 
 
 import { JSX, useEffect, useState } from "react";
-import { collection, addDoc, serverTimestamp, getDocs, getDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  getDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../../firebase";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import supabase from "../../supabase";
 
-// Define types for the form data
+// Define the shape of a category
+interface Category {
+  id: string;
+  name: string;
+}
+
+// Define the shape of the listing form data
 interface ListingFormData {
   name: string;
   price: string;
@@ -234,13 +248,8 @@ interface ListingFormData {
   available: boolean;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 export default function AddListing(): JSX.Element {
-  const { id } = useParams<{ id: string }>(); // Typing for the useParams hook
+  const { id } = useParams<{ id: string }>();
   const { currentUser, defaultCategories } = useAuth();
   const [formData, setFormData] = useState<ListingFormData>({
     name: "",
@@ -255,38 +264,72 @@ export default function AddListing(): JSX.Element {
     available: true,
   });
   const [uploading, setUploading] = useState<boolean>(false);
-  const navigate = useNavigate();
   const [Categories, setCategories] = useState<Category[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchListings = async () => {
+    const fetchData = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "categories"));
-        const listingsData: Category[] = querySnapshot.docs.map((doc) => ({
+        const categoriesFromDB: Category[] = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data(),
-        })) as Category[];
+          ...(doc.data() as Omit<Category, "id">),
+        }));
 
-        setCategories([...listingsData, ...defaultCategories]);
+        // Merge with default categories if any
+        setCategories([...categoriesFromDB, ...(defaultCategories || [])]);
 
         if (id) {
-          const q = await getDoc(doc(db, "listings", id));
-          if (q.exists()) setFormData({ ...q.data(), adminUID: currentUser?.uid || "" });
+          const docRef = doc(db, "listings", id);
+          const snapshot = await getDoc(docRef);
+          if (snapshot.exists()) {
+            const data = snapshot.data() as Partial<ListingFormData>;
+            setFormData((prev) => ({
+              ...prev,
+              ...data,
+              adminUID: currentUser?.uid || "",
+            }));
+          }
         }
       } catch (error: any) {
-        toast.error("Error fetching listings: " + error.message);
+        toast.error("Error fetching data: " + error.message);
       }
     };
-    fetchListings();
+
+    fetchData();
   }, [id, currentUser?.uid, defaultCategories]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const filePath = `listings/${Date.now()}_${file.name.replace(/\s+/g, "")}`;
+    const { error } = await supabase.storage
+      .from("travel")
+      .upload(filePath, file);
+
+    if (error) {
+      toast.error("Image upload failed: " + error.message);
+    } else {
+      const { data: publicUrlData } = supabase.storage
+        .from("travel")
+        .getPublicUrl(filePath);
+
+      setFormData((prev) => ({
+        ...prev,
+        imageUrl: publicUrlData.publicUrl,
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
     try {
       if (id) {
-        await updateDoc(doc(db, "listings", id), formData);
-        toast.success("Listing Updated successfully!");
+        await updateDoc(doc(db, "listings", id), formData as { [x: string]: any });
+
+        toast.success("Listing updated successfully!");
       } else {
         await addDoc(collection(db, "listings"), {
           ...formData,
@@ -297,39 +340,27 @@ export default function AddListing(): JSX.Element {
       }
       navigate(-1);
     } catch (error: any) {
-      toast.error("Error adding listing: " + error.message);
+      toast.error("Error saving listing: " + error.message);
     } finally {
       setUploading(false);
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const filePath = `listings/${Date.now()}_${file.name.replace(/\s+/g, '')}`;
-    const { data, error } = await supabase.storage
-      .from('travel') // Your bucket name
-      .upload(filePath, file);
-
-    if (error) {
-      toast.error("Image upload failed: " + error.message);
-    } else {
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('travel')
-        .getPublicUrl(filePath);
-      setFormData({ ...formData, imageUrl: publicUrlData.publicUrl });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-emerald-950 p-6">
-      <h1 className="text-3xl font-bold text-emerald-400 drop-shadow mb-6">{id ? "Update" : "Add New"} Listing</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 bg-gray-900 p-6 rounded-xl shadow-2xl shadow-emerald-800">
+      <h1 className="text-3xl font-bold text-emerald-400 drop-shadow mb-6">
+        {id ? "Update" : "Add New"} Listing
+      </h1>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 bg-gray-900 p-6 rounded-xl shadow-2xl shadow-emerald-800"
+      >
+        {/* Place & Price */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block mb-1 font-semibold text-gray-300">Place Name</label>
+            <label className="block mb-1 font-semibold text-gray-300">
+              Place Name
+            </label>
             <input
               type="text"
               value={formData.name}
@@ -339,7 +370,9 @@ export default function AddListing(): JSX.Element {
             />
           </div>
           <div>
-            <label className="block mb-1 font-semibold text-gray-300">Price per Night ($)</label>
+            <label className="block mb-1 font-semibold text-gray-300">
+              Price per Night ($)
+            </label>
             <input
               type="number"
               value={formData.price}
@@ -350,6 +383,7 @@ export default function AddListing(): JSX.Element {
           </div>
         </div>
 
+        {/* Address */}
         <div>
           <label className="block mb-1 font-semibold text-gray-300">Address</label>
           <input
@@ -361,6 +395,7 @@ export default function AddListing(): JSX.Element {
           />
         </div>
 
+        {/* City, PIN, Category */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block mb-1 font-semibold text-gray-300">City</label>
@@ -391,13 +426,16 @@ export default function AddListing(): JSX.Element {
               required
             >
               <option value="">Select Category</option>
-              {Categories.map((item) => (
-                <option value={item.name} key={item.id}>{item.name}</option>
+              {Categories.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
+        {/* Description */}
         <div>
           <label className="block mb-1 font-semibold text-gray-300">Description</label>
           <textarea
@@ -409,28 +447,40 @@ export default function AddListing(): JSX.Element {
           />
         </div>
 
+        {/* Image Upload */}
         <div>
           <label className="block mb-1 font-semibold text-gray-300">Upload Image</label>
-          <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleUpload}
+            disabled={uploading}
+          />
         </div>
 
+        {/* Availability */}
         <div className="flex items-center space-x-3">
           <input
             type="checkbox"
             id="available"
             checked={formData.available}
-            onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
+            onChange={(e) =>
+              setFormData({ ...formData, available: e.target.checked })
+            }
             className="h-5 w-5 text-emerald-500 focus:ring-emerald-500"
           />
-          <label htmlFor="available" className="text-gray-300">Available for booking</label>
+          <label htmlFor="available" className="text-gray-300">
+            Available for booking
+          </label>
         </div>
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={uploading}
           className="bg-emerald-600 text-black font-bold px-6 py-2 rounded hover:bg-emerald-500 disabled:bg-gray-500 transition shadow-lg"
         >
-          {uploading ? 'Uploading...' : id ? 'Update Listing' : 'Add Listing'}
+          {uploading ? "Uploading..." : id ? "Update Listing" : "Add Listing"}
         </button>
       </form>
     </div>
