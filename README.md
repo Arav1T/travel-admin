@@ -21,7 +21,7 @@ VITE_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-
+#This project was initially developed in JavaScript. During the migration to TypeScript, the original JavaScript code was commented out across various components. These commented sections have been retained temporarily for reference and comparison purposes.
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
