@@ -1,3 +1,27 @@
+To get started with this project, you need to:
+
+1. Configure Firebase using your project credentials (API key, Auth domain, Project ID, etc.).
+
+2. Create a Supabase account and generate your project’s URL and public (anon) key.
+
+3. Use Supabase for file uploads (e.g., PDFs) and Firebase for authentication and Firestore data handling.
+
+Make sure to add all necessary keys in your .env file as shown below:
+
+# Firebase Configuration
+VITE_APP_FIREBASE_API_KEY=your_firebase_api_key
+VITE_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_APP_FIREBASE_PROJECT_ID=your_project_id
+VITE_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_APP_FIREBASE_APP_ID=your_app_id
+VITE_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
